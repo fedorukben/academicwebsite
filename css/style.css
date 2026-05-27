@@ -2,3 +2,17 @@ body {
   background-color: #CDACA1;
   color: #090909;
 }
+
+ol.custom-counter {
+  list-style-type: none;
+  counter-reset: item;
+  padding-left: 0;
+}
+li.custom-counter-item {
+  counter-increment: item;
+  margin-bottom: 0.5em;
+}
+li.custom-counter-item:before {
+  content: counter(item) ". ";
+  font-weight: bold;
+}

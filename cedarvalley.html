@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Map with GPS Marker</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        .map-container {
+            position: relative;
+        }
+
+        #trail-map {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #coordinates {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="map-container">
+        <img src="img/cedarvalley.png" alt="Cedar Valley Map" id="trail-map">
+        <div class="marker" id="gps-marker"></div>
+    </div>
+    <div id="coordinates">Current GPS Location: </div>
+    <script>
+        // Reference points forming a non-collinear triangle
+        const referencePoints = [
+            { lat: 43.937021, long: -78.888803, x: 5744, y: 3413 }, // Point 1
+            { lat: 43.939754, long: -78.893306, x: 2712, y: 946 }, // Point 2
+            { lat: 43.935015, long: -78.896401, x: 509, y: 5322 }  // Point 3
+        ];
+
+        // Barycentric interpolation function
+        function latLongToPixels(lat, long) {
+            const [P1, P2, P3] = referencePoints;
+
+            // Calculate the areas using determinant method
+            const area = (P2.long - P3.long) * (P1.lat - P3.lat) - (P2.lat - P3.lat) * (P1.long - P3.long);
+
+            const w1 = ((P2.long - P3.long) * (lat - P3.lat) - (P2.lat - P3.lat) * (long - P3.long)) / area;
+            const w2 = ((P3.long - P1.long) * (lat - P3.lat) - (P3.lat - P1.lat) * (long - P3.long)) / area;
+            const w3 = 1 - w1 - w2;
+
+            const x = w1 * P1.x + w2 * P2.x + w3 * P3.x;
+            const y = w1 * P1.y + w2 * P2.y + w3 * P3.y;
+
+            return { x, y };
+        }
+
+        // Function to update the marker position based on GPS coordinates
+        function updateMarkerPosition(lat, long) {
+            console.log(`Updating marker position to Latitude: ${lat}, Longitude: ${long}`);
+            const marker = document.getElementById('gps-marker');
+            const { x, y } = latLongToPixels(lat, long);
+
+            marker.style.left = `${x}px`;
+            marker.style.top = `${y}px`;
+        }
+
+        // Get the current GPS location and update the marker position
+        function updateLocation() {
+            console.log("Attempting to update location...");
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    console.log(`Current Position - Latitude: ${latitude}, Longitude: ${longitude}`);
+                    updateMarkerPosition(latitude, longitude);
+
+                    const coordinatesDiv = document.getElementById('coordinates');
+                    coordinatesDiv.textContent = `Current GPS Location: \nLatitutde ${latitude.toFixed(5)},\nLongitude ${longitude.toFixed(5)}`;
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // Update the location on page load and at regular intervals
+        window.onload = updateLocation;
+        setInterval(updateLocation, 5000); // Update every 10 seconds
+    </script>
+</body>
+</html>
